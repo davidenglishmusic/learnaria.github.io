@@ -35,14 +35,19 @@
         .addClass('ik_tooltip')
         .attr({
           'id': id,
+          'role': 'tooltip',
+          'aria-hidden': 'true',
+          'aria-live': 'polite'
         });
 
       $elem
+        .attr({
+          'tabindex': 0
+        })
         .css('position', 'relative')
         .removeAttr('title') // remove title to prevent it from being read
         .after($tooltip)
-        .on('mouseover', function(event) {
-
+        .on('mouseover focus', function(event) {
           var y, x;
 
           y = $elem.position().top - $tooltip.height() - 20;
@@ -59,6 +64,9 @@
           }
 
           $tooltip // position and show tooltip
+            .attr({
+              'aria-hidden': 'false'
+            })
             .css({
               'top': y,
               'left': x
@@ -66,20 +74,38 @@
             .addClass('visible');
         })
         .on('mouseout', function(event) {
-
           if (!$(event.currentTarget).is(':focus')) { // hide tooltip if current element is not focused
-
             $tooltip
+              .attr({
+                'aria-hidden': 'true'
+              })
               .removeClass('visible mouseover');
           }
 
         })
+        .on('blur', function(event) {
+          if (!$tooltip.hasClass('mouseover')) { // hide tooltip if mouse is not over the current element
+            $tooltip
+              .attr({
+                'aria-hidden': 'true'
+              })
+              .removeClass('visible');
+          }
+        })
+        .on('keyup', function(event) {
+          if (event.keyCode == ik_utils.keys.esc) { // hide when escape key is pressed
+            $tooltip
+              .attr({
+                'aria-hidden': 'true'
+              })
+              .removeClass('visible');
+          }
+        });
     }
   };
 
   $.fn[pluginName] = function(options) {
     return this.each(function() {
-
       if (!$.data(this, pluginName)) {
         $.data(this, pluginName,
           new Plugin(this, options));

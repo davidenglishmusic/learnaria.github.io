@@ -5,8 +5,8 @@
     defaults = {
       'minLength': 2,
       'maxResults': 10,
-      'source': []
-
+      'source': [],
+      'instructions': "As you type, similar search terms will be suggested. Use the up and down arrow keys to select a suggestion."
     };
 
   /**
@@ -35,7 +35,11 @@
     plugin = this;
 
     plugin.notify = $('<div/>') // add hidden live region to be used by screen readers
-      .addClass('ik_readersonly');
+      .addClass('ik_readersonly')
+      .attr({
+        'role': 'region',
+        'aria-live': 'polite'
+      })
 
     $elem = plugin.element
       .attr({
@@ -73,7 +77,7 @@
     var plugin;
 
     plugin = event.data.plugin;
-
+    plugin.notify.text(plugin.options.instructions);
   };
 
   /**
@@ -124,23 +128,43 @@
     plugin = event.data.plugin;
     $me = $(event.currentTarget);
 
-    plugin.list.empty();
+    switch (event.keyCode) {
+      case ik_utils.keys.down:
+        selected = plugin.list.find('.selected');
+        if(selected.length) {
+            msg = selected.removeClass('selected').next().addClass('selected').text();
+        } else {
+            msg = plugin.list.find('li:first').addClass('selected').text();
+        }
+        plugin.notify.text(msg);
+        break;
+      case ik_utils.keys.up:
+        selected = plugin.list.find('.selected');
+        if(selected.length) {
+            msg = selected.removeClass('selected').prev().addClass('selected').text();
+        }
+        plugin.notify.text(msg);
+        break;
 
-    suggestions = plugin.getSuggestions(plugin.options.source, $me.val());
+    default:
+      plugin.list.empty();
 
-    if (suggestions.length > 1) {
-      for (var i = 0, l = suggestions.length; i < l; i++) {
-        $('<li/>').html(suggestions[i])
-          .on('click', {
-            'plugin': plugin
-          }, plugin.onOptionClick) // add click event handler
-          .appendTo(plugin.list);
+      suggestions = plugin.getSuggestions(plugin.options.source, $me.val());
+
+      if (suggestions.length > 1) {
+        for (var i = 0, l = suggestions.length; i < l; i++) {
+          $('<li/>').html(suggestions[i])
+            .on('click', {
+              'plugin': plugin
+            }, plugin.onOptionClick)
+            .appendTo(plugin.list);
+        }
+        plugin.list.show();
+      } else {
+        plugin.list.hide();
       }
-      plugin.list.show();
-    } else {
-      plugin.list.hide();
+      break;
     }
-
   };
 
   /**
@@ -206,6 +230,10 @@
           r.push(arr[i].replace(regex, '<span>$1</span>'));
         }
       }
+    }
+
+    if (r.length > 1) { // add instructions to hidden live area
+        this.notify.text('Suggestions are available for this field. Use the up and down arrows to navigate through the suggestions and the enter key to confirm one.');
     }
 
     return r;

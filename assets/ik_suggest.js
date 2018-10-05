@@ -1,6 +1,5 @@
 ;
 (function($, window, document, undefined) {
-
   var pluginName = "ik_suggest",
     defaults = {
       'minLength': 2,
@@ -18,7 +17,6 @@
    * @param {number} options.maxResults - Maximum number of shown suggestions.
    */
   function Plugin(element, options) {
-
     this.element = $(element);
     this.options = $.extend({}, defaults, options);
     this._defaults = defaults;
@@ -29,7 +27,6 @@
 
   /** Initializes plugin. */
   Plugin.prototype.init = function() {
-
     var $elem, plugin;
 
     plugin = this;
@@ -62,7 +59,6 @@
     plugin.list = $('<ul/>').addClass('suggestions');
 
     $elem.after(plugin.notify, plugin.list);
-
   };
 
   /**
@@ -73,7 +69,6 @@
    * @param {object} event.data.plugin - Reference to plugin.
    */
   Plugin.prototype.onFocus = function(event) {
-
     var plugin;
 
     plugin = event.data.plugin;
@@ -88,30 +83,23 @@
    * @param {object} event.data.plugin - Reference to plugin.
    */
   Plugin.prototype.onKeyDown = function(event) {
-
     var plugin, selected;
 
     plugin = event.data.plugin;
 
     switch (event.keyCode) {
-
       case ik_utils.keys.tab:
       case ik_utils.keys.esc:
-
         plugin.list.empty().hide(); // empty list and hide suggestion box
-
         break;
 
       case ik_utils.keys.enter:
-
         selected = plugin.list.find('.selected');
         plugin.element.val(selected.text()); // set text field value to the selected option
         plugin.list.empty().hide(); // empty list and hide suggestion box
 
         break;
-
     }
-
   };
 
   /**
@@ -122,7 +110,6 @@
    * @param {object} event.data.plugin - Reference to plugin.
    */
   Plugin.prototype.onKeyUp = function(event) {
-
     var plugin, $me, suggestions, selected, msg;
 
     plugin = event.data.plugin;
@@ -131,39 +118,40 @@
     switch (event.keyCode) {
       case ik_utils.keys.down:
         selected = plugin.list.find('.selected');
-        if(selected.length) {
-            msg = selected.removeClass('selected').next().addClass('selected').text();
+        if (selected.length) {
+          msg = selected.removeClass('selected').next().addClass('selected').text();
         } else {
-            msg = plugin.list.find('li:first').addClass('selected').text();
+          msg = plugin.list.find('li:first').addClass('selected').text();
         }
         plugin.notify.text(msg);
         break;
+
       case ik_utils.keys.up:
         selected = plugin.list.find('.selected');
-        if(selected.length) {
-            msg = selected.removeClass('selected').prev().addClass('selected').text();
+        if (selected.length) {
+          msg = selected.removeClass('selected').prev().addClass('selected').text();
         }
         plugin.notify.text(msg);
         break;
 
-    default:
-      plugin.list.empty();
+      default:
+        plugin.list.empty();
 
-      suggestions = plugin.getSuggestions(plugin.options.source, $me.val());
+        suggestions = plugin.getSuggestions(plugin.options.source, $me.val());
 
-      if (suggestions.length > 1) {
-        for (var i = 0, l = suggestions.length; i < l; i++) {
-          $('<li/>').html(suggestions[i])
-            .on('click', {
-              'plugin': plugin
-            }, plugin.onOptionClick)
-            .appendTo(plugin.list);
+        if (suggestions.length > 1) {
+          for (var i = 0, l = suggestions.length; i < l; i++) {
+            $('<li/>').html(suggestions[i])
+              .on('click', {
+                'plugin': plugin
+              }, plugin.onOptionClick)
+              .appendTo(plugin.list);
+          }
+          plugin.list.show();
+        } else {
+          plugin.list.hide();
         }
-        plugin.list.show();
-      } else {
-        plugin.list.hide();
-      }
-      break;
+        break;
     }
   };
 
@@ -175,13 +163,11 @@
    * @param {object} event.data.plugin - Reference to plugin.
    */
   Plugin.prototype.onFocusOut = function(event) {
-
     var plugin = event.data.plugin;
 
     setTimeout(function() {
       plugin.list.empty().hide();
     }, 200);
-
   };
 
   /**
@@ -192,7 +178,6 @@
    * @param {object} event.data.plugin - Reference to plugin.
    */
   Plugin.prototype.onOptionClick = function(event) {
-
     var plugin, $option;
 
     event.preventDefault();
@@ -202,7 +187,6 @@
     $option = $(event.currentTarget);
     plugin.element.val($option.text());
     plugin.list.empty().hide();
-
   };
 
   /**
@@ -212,7 +196,6 @@
    * @param {string} str - Search string.
    */
   Plugin.prototype.getSuggestions = function(arr, str) {
-
     var r, pattern, regex, len, limit;
 
     r = [];
@@ -226,6 +209,7 @@
         if (r.length > limit) {
           break;
         }
+
         if (regex.test(arr[i])) {
           r.push(arr[i].replace(regex, '<span>$1</span>'));
         }
@@ -233,24 +217,18 @@
     }
 
     if (r.length > 1) { // add instructions to hidden live area
-        this.notify.text('Suggestions are available for this field. Use the up and down arrows to navigate through the suggestions and the enter key to confirm one.');
+      this.notify.text('Suggestions are available for this field. Use the up and down arrows to navigate through the suggestions and the enter key to confirm one.');
     }
 
     return r;
-
   };
 
   $.fn[pluginName] = function(options) {
-
     return this.each(function() {
-
       if (!$.data(this, pluginName)) {
         $.data(this, pluginName,
           new Plugin(this, options));
       }
-
     });
-
   }
-
 })(jQuery, window, document);

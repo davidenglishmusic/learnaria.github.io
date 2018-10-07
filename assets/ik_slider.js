@@ -2,6 +2,7 @@
 (function($, window, document, undefined) {
   var pluginName = 'ik_slider',
     defaults = {
+      'instructions': 'Use the right and left arrow keys to adjust the slider value.',
       'minValue': 0,
       'maxValue': 100,
       'nowValue': 0,
@@ -41,7 +42,8 @@
     } else {
       plugin.textfield
         .attr({
-          'readonly': ''
+          'readonly': '',
+          'tabindex': -1
         })
         .addClass('ik_value')
         .wrap('<div></div>'); // wrap initial element in a div
@@ -59,7 +61,13 @@
 
       plugin.knob = $('<div/>')
         .attr({
-          'id': id
+          'id': id,
+          'tabindex': 0,
+          'role': 'slider',
+          'aria-valuemin': plugin.options.minValue,
+          'aria-valuemax': plugin.options.maxValue,
+          'aria-valuenow': plugin.options.minValue,
+          'aria-describedby': id + '_instructions'
         })
         .addClass('ik_knob')
         .on('mousedown', {
@@ -77,7 +85,10 @@
               'plugin': plugin
             }
           })
-        });
+        })
+        .on('keydown', {
+          'plugin': plugin
+        }, plugin.onKeyDown);
 
       $('<div/>') // add slider track
         .addClass('ik_track')
@@ -86,6 +97,14 @@
 
       this.setValue(plugin.options.minValue); // update current value
     }
+
+    $('<div/>')
+      .attr({
+        'id': id + '_instructions'
+      })
+      .text(this.options.instructions)
+      .addClass('ik_readersonly')
+      .appendTo(this.element);
   };
 
   /**
@@ -96,6 +115,10 @@
   Plugin.prototype.setValue = function(n) {
     this.textfield.val(n);
     this.options.nowValue = n;
+    this.knob
+      .attr({
+        'aria-valuenow': n
+      });
     this.updateDisplay(n); // update display
   };
 
@@ -182,6 +205,35 @@
     plugin.dragging = false;
     plugin.element.removeClass('dragging');
     plugin.setValue(plugin.options.nowValue);
+  };
+
+	Plugin.prototype.onKeyDown = function(event) {
+    var $elem, plugin, value;
+
+    $elem = $(this);
+    plugin = event.data.plugin;
+
+    switch (event.keyCode) {
+      case ik_utils.keys.right:
+        value = parseInt($elem.attr('aria-valuenow')) + plugin.options.step;
+        value = value < plugin.options.maxValue ? value : plugin.options.maxValue;
+        plugin.setValue(value);
+        break;
+
+      case ik_utils.keys.end:
+        plugin.setValue(plugin.options.maxValue);
+        break;
+
+      case ik_utils.keys.left:
+        value = parseInt($elem.attr('aria-valuenow')) - plugin.options.step;
+        value = value > plugin.options.minValue ? value : plugin.options.minValue
+        plugin.setValue(value);
+        break;
+
+      case ik_utils.keys.home:
+        plugin.setValue(plugin.options.minValue);
+        break;
+    }
   };
 
   $.fn[pluginName] = function(options) {

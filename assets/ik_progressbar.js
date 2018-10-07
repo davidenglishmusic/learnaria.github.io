@@ -2,7 +2,8 @@
 (function($, window, document, undefined) {
   var pluginName = 'ik_progressbar',
     defaults = { // values can be overitten by passing configuration options to plugin constructor
-      'max': 100
+      'max': 100,
+      'instructions': 'Press spacebar or enter to get progress'
     };
 
   /**
@@ -28,14 +29,36 @@
     this.element
       .attr({
         'id': id,
+        'tabindex': -1,
+        'role': 'progressbar',
+        'aria-valuenow': 0,
+        'aria-valuemin': 0,
+        'aria-valuemax': this.options.max,
+        'aria-describedby': id + '_instructions'
       })
-      .addClass('ik_progressbar');
+      .addClass('ik_progressbar')
+      .on('keydown.ik', {
+        'plugin': this
+      }, this.onKeyDown);
 
     this.fill = $('<div/>')
       .addClass('ik_fill');
 
     this.notification = $('<div/>') // add div element to be used to notify about the status of download
+      .attr({
+        'aria-live': 'assertive',
+        'aria-atomic': 'additions'
+      })
       .addClass('ik_readersonly')
+      .appendTo(this.element);
+
+    $('<div/>')
+      .text(this.options.instructions)
+      .addClass('ik_readersonly')
+      .attr({
+        'id': id + '_instructions',
+        'aria-hidden': 'true'
+      })
       .appendTo(this.element);
 
     $('<div/>')
@@ -52,7 +75,7 @@
   Plugin.prototype.getValue = function() {
     var value;
 
-    value = Number(this.element.data('value')); // inaccessible
+    value = Number(this.element.attr('aria-valuenow'));
 
     return parseInt(value);
   };
@@ -89,8 +112,8 @@
     }
 
     this.element
-      .data({ // inaccessible
-        'value': parseInt(val)
+      .attr({
+        'aria-valuenow': val
       });
 
     this.updateDisplay();
@@ -113,6 +136,17 @@
     this.setValue(0);
     this.updateDisplay();
     this.notify();
+  };
+
+  Plugin.prototype.onKeyDown = function(event) {
+    switch (event.keyCode) {
+      case ik_utils.keys.space:
+      case ik_utils.keys.enter:
+        event.preventDefault();
+        event.stopPropagation();
+        event.data.plugin.notify();
+        break;
+    }
   };
 
   $.fn[pluginName] = function(options) {

@@ -31,18 +31,34 @@
     plugin = this;
 
     $elem.attr({
-      'id': id
+      'id': id,
+      'role': 'region'
     }).addClass('ik_accordion');
+
+    $elem.attr({
+      'aria-multiselectable': !this.options.autoCollapse
+    });
+
+    this.headers = $elem.children('dt').attr({
+      'role': 'heading'
+    });
 
     this.headers = $elem.children('dt').each(function(i, el) {
       var $me, $btn;
 
       $me = $(el);
       $btn = $('<div/>').attr({
-          'id': id + '_btn_' + i
+          'id': id + '_btn_' + i,
+          'role': 'button',
+          'aria-controls': id + '_panel_' + i,
+          'aria-expanded': false,
+          'tabindex': 0
         })
         .addClass('button')
         .html($me.html())
+        .on('keydown', {
+          'plugin': plugin
+        }, plugin.onKeyDown)
         .on('click', {
           'plugin': plugin
         }, plugin.togglePanel);
@@ -54,7 +70,10 @@
       var $me = $(this),
         id = $elem.attr('id') + '_panel_' + i;
       $me.attr({
-        'id': id
+        'id': id,
+        'role': 'region',
+        'aria-hidden': false,
+        'tabindex': 0
       });
     }).hide();
   };
@@ -83,18 +102,53 @@
 
         if ($btn[0] != $(event.currentTarget)[0]) {
           $btn.removeClass('expanded');
+          $btn.attr('aria-expanded', false);
           $hdr.next().slideUp(plugin.options.animationSpeed);
         } else {
           $btn.addClass('expanded');
+          $btn.attr('aria-expanded', true);
           $hdr.next().slideDown(plugin.options.animationSpeed);
         }
       });
-
     } else { // toggle current panel depending on the state
       isVisible = !!$panel.is(':visible');
       $panel.slideToggle({
         duration: plugin.options.animationSpeed
       });
+      $me.attr('aria-expanded', !isVisible);
+    }
+  };
+
+  Plugin.prototype.onKeyDown = function(event) {
+    var $me, $header, plugin, $elem, $current, ind;
+
+    $me = $(event.target);
+    $header = $me.parent('dt');
+    plugin = event.data.plugin;
+    $elem = $(plugin.element);
+
+    switch (event.keyCode) {
+      case ik_utils.keys.enter:
+      case ik_utils.keys.space:
+        event.preventDefault();
+        event.stopPropagation();
+        plugin.togglePanel(event);
+        break;
+
+      case ik_utils.keys.up:
+        ind = plugin.headers.index($header);
+        if (ind > 0) {
+          plugin.headers.eq(--ind).find('.button').focus();
+        }
+        console.log(ind);
+        break;
+
+      case ik_utils.keys.down:
+        ind = plugin.headers.index($header);
+        if (ind < plugin.headers.length - 1) {
+          plugin.headers.eq(++ind).find('.button').focus();
+        }
+        break;
     }
   };
 

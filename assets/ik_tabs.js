@@ -32,6 +32,9 @@
 
     $tabbar = $('<ul/>') // create ul element to hold all tabs
       .addClass('ik_tabbar cf')
+      .attr({
+        'role': 'tablist' // add tablistr role
+      })
       .prependTo($elem);
 
     plugin.panels = $elem // initialize panels and create tabs
@@ -40,7 +43,10 @@
         var $tab, $panel, lbl;
 
         $panel = $(el).attr({
-            'id': id + '_panel' + i // add unique id for a panel
+            'id': id + '_panel' + i, // add unique id for a panel
+            'role': 'tabpanel',
+            'aria-hidden': true,
+            'tabindex': 0
           })
           .addClass('ik_tabpanel')
           .hide();
@@ -50,13 +56,19 @@
         $panel.removeAttr('title');
 
         $tab = $('<li/>').attr({
-            'id': id + '_tab' + i // create unique id for a tab
+            'id': id + '_tab' + i, // create unique id for a tab
+            'role': 'tab',
+            'aria-controls': 'panel' + i
           })
           .text(lbl > '' ? lbl : 'Tab ' + (i + 1))
           .on('click', {
             'plugin': plugin,
             'index': i
           }, plugin.selectTab) // add mouse event handler
+          .on('keydown', {
+            'plugin': plugin,
+            'index': i
+          }, plugin.onKeyDown)
           .appendTo($tabbar);
       });
 
@@ -90,18 +102,71 @@
 
     $tabs // deselect all tabs
       .removeClass('selected')
+      .attr({
+        'aria-selected': false,
+        'tabindex': -1
+      })
       .blur();
 
     $($tabs[ind]) // select specified tab
-      .addClass('selected');
+      .addClass('selected')
+      .attr({
+        'aria-selected': true,
+        'tabindex': 0
+      });
 
-    if (event.type) $($tabs[ind]).focus(); // move focus to current tab if reached by mouse or keyboard
+    $($tabs[ind]).focus(); // move focus to current tab if reached by mouse or keyboard
 
     $panels // hide all panels
+      .attr({
+        'aria-hidden': true
+      })
       .hide();
 
     $($panels[ind]) // show current panel
+      .attr({
+        'aria-hidden': false
+      })
       .show();
+  }
+
+  Plugin.prototype.onKeyDown = function(event) {
+    var plugin = event.data.plugin,
+      ind = event.data.index,
+      $tabs,
+      $panels,
+      next;
+
+    $elem = plugin.element;
+    $tabs = plugin.tabs;
+    $panels = plugin.panels;
+
+    switch (event.keyCode) {
+      case ik_utils.keys.left:
+      case ik_utils.keys.up:
+        next = ind > 0 ? --ind : 0;
+        plugin.selectTab({
+          data: {
+            'plugin': plugin,
+            'index': next
+          }
+        });
+        break;
+      case ik_utils.keys.right:
+      case ik_utils.keys.down:
+        next = ind < $tabs.length - 1 ? ++ind : $tabs.length - 1;
+        plugin.selectTab({
+          data: {
+            'plugin': plugin,
+            'index': next
+          }
+        });
+        break;
+      case ik_utils.keys.space:
+        event.preventDefault();
+        event.stopPropagation();
+        return false;
+    }
   }
 
   $.fn[pluginName] = function(options) {

@@ -115,11 +115,12 @@
       }, plugin.onClick)
       .on('keydown', {
         'plugin': plugin
-      }, plugin.onKeyDown)
-      .find('li:first')
-      .attr({
-        'tabindex': 0
-      });
+      }, plugin.onKeyDown);
+
+    $elem.find('li:first')
+    .attr({
+      'tabindex': 0
+    });
   };
 
   /**
